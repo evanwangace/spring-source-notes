@@ -246,7 +246,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		//从容器当中获取
 		Object sharedInstance = getSingleton(beanName);
 		//如果sharedInstance不等于Null 即存在 实际会直接返回bean
-		if (sharedInstance != null && args == null) {
+ 		if (sharedInstance != null && args == null) {
 
 			if (logger.isTraceEnabled()) {
 				if (isSingletonCurrentlyInCreation(beanName)) {

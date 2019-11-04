@@ -242,12 +242,18 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
+		//返回类名 单例对象---缓存到一个map---beanName
 		Object cacheKey = getCacheKey(beanClass, beanName);
 
 		if (!StringUtils.hasLength(beanName) || !this.targetSourcedBeans.contains(beanName)) {
+			//advisedBeans放的是这阶段不需要被代理的bean 例如@Aspect注解标注的切面类，以及我们的配置类MyConfig.class。
+			//两种：1.不能被代理 2.在这个阶段已经被代理
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
+			//isInfrastructureClass(beanClass)判断当前bean将来是否能够被代理。（判断是否在advisedBeans 以及 判断是否符合代理的表达式）
+			//shouldSkip(beanClass, beanName) 找出关于代理的相关信息，且判断是否能代理
+			//补充：其实在这里 不能被代理的类通过下面的代码，已经放入到advisedBean中了。
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);
 				return null;
@@ -296,6 +302,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (bean != null) {
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
 			if (this.earlyProxyReferences.remove(cacheKey) != bean) {
+				//处理aop
 				return wrapIfNecessary(bean, beanName, cacheKey);
 			}
 		}
@@ -315,7 +322,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @return the cache key for the given class and name
 	 */
 	protected Object getCacheKey(Class<?> beanClass, @Nullable String beanName) {
+		//判断类名有没有内容
 		if (StringUtils.hasLength(beanName)) {
+			//判断类是不是factoryBean的 factoryBean类名加&符号
 			return (FactoryBean.class.isAssignableFrom(beanClass) ?
 					BeanFactory.FACTORY_BEAN_PREFIX + beanName : beanName);
 		}
@@ -331,10 +340,17 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @param cacheKey the cache key for metadata access
 	 * @return a proxy wrapping the bean, or the raw bean instance as-is
 	 */
+
+	/**
+	 *实际上这个方法，在处理Spring的循环依赖的 addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
+	 * 以及 initializeBean(beanName, exposedObject, mbd); 都调用了这个方法，会根据beanName对this.advisedBeans的既存内容进行判断。
+	 * 所以 不会产生冲突 即不会进行两次AOP。
+	 */
 	protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) {
 		if (StringUtils.hasLength(beanName) && this.targetSourcedBeans.contains(beanName)) {
 			return bean;
 		}
+		//与之前第一次调用后置处理器联系起来，判断如果这个bean已经在advisedBeans，且Boolean为false。则直接返回bean。
 		if (Boolean.FALSE.equals(this.advisedBeans.get(cacheKey))) {
 			return bean;
 		}
@@ -353,6 +369,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			return proxy;
 		}
 
+		//当一个bean的代理被创建后，会将其put到advisedBeans中。对应了不能被代理的其中一种情况，即不能被代理。
 		this.advisedBeans.put(cacheKey, Boolean.FALSE);
 		return bean;
 	}
@@ -369,7 +386,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @see org.springframework.aop.framework.AopInfrastructureBean
 	 * @see #shouldSkip
 	 */
+	//判断是不是基础类
 	protected boolean isInfrastructureClass(Class<?> beanClass) {
+		//判断是不是advice类型，是的话不需要代理。通知是不能被代理的，等等...一些列判断
 		boolean retVal = Advice.class.isAssignableFrom(beanClass) ||
 				Pointcut.class.isAssignableFrom(beanClass) ||
 				Advisor.class.isAssignableFrom(beanClass) ||
