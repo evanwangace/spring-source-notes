@@ -147,6 +147,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * @param beanName the name of the bean
 	 * @param singletonFactory the factory for the singleton object
 	 */
+	//通过后置处理器，返回一个符合当前需求的对象，可以理解为full对象。
 	protected void addSingletonFactory(String beanName, ObjectFactory<?> singletonFactory) {
 		//ObjectFactory<?> singletonFactory 对象工厂，产生半成品对象
 		//为什么spring把一个工厂放在这里？提前暴露工厂

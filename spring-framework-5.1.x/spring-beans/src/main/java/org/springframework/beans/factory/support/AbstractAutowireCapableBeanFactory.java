@@ -410,6 +410,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			throws BeansException {
 
 		Object result = existingBean;
+		//执行所有直接实现了BeanPostProcessor的实现类的
 		for (BeanPostProcessor processor : getBeanPostProcessors()) {
 			Object current = processor.postProcessBeforeInitialization(result, beanName);
 			if (current == null) {
@@ -425,7 +426,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			throws BeansException {
 
 		Object result = existingBean;
+		//执行所有直接实现了BeanPostProcessor的实现类的postProcessAfterInitialization
 		for (BeanPostProcessor processor : getBeanPostProcessors()) {
+			//拿出所有的后置处理器，调用postProcessAfterInitialization方法
 			Object current = processor.postProcessAfterInitialization(result, beanName);
 			if (current == null) {
 				return result;
@@ -475,7 +478,6 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	@Override
 	protected Object createBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args)
 			throws BeanCreationException {
-
 		if (logger.isTraceEnabled()) {
 			logger.trace("Creating instance of bean '" + beanName + "'");
 		}
@@ -503,7 +505,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		try {
 			// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
-			//第一次调用后置处理器---aop
+			//第一次调用后置处理器---aop （实例化之前，此时的对象还没有new出来）
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			//一般情况下为空
 			if (bean != null) {
@@ -560,7 +562,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 		if (instanceWrapper == null) {
 			//实例化对象，里面第二次调用后置处理器
-			//做了大概两件事：1.推断构造方法 2.把当前bd对应的对象实例化出来
+			//做了大概两件事：1.推断构造方法 2.通过反射把当前bd对应的对象实例化出来
 			//将对象实例化后，返回该对象的包装对象
 			instanceWrapper = createBeanInstance(beanName, mbd, args);
 		}
@@ -599,7 +601,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 			//如果允许循环依赖，代码来到这里
 			//第四次调用后置处理器，判断是否需要AOP
-			//addSingleFactory的本质是把一个对象放到map当中
+			//addSingleFactory的本质是把一个对象放到map当中(能处理aop的工厂)
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
 
@@ -966,6 +968,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
 					SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
+					//实际去处理了aop
 					exposedObject = ibp.getEarlyBeanReference(exposedObject, beanName);
 				}
 			}
@@ -1112,11 +1115,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		Object bean = null;
 		if (!Boolean.FALSE.equals(mbd.beforeInstantiationResolved)) {
 			// Make sure bean class is actually resolved at this point.
+			//1.判断是不是合成类 2.判断当前容器中是否有InstantiationAwareBeanPostProcessors(在registerBeanPostProcessors(beanFactory)中进行了标识)
 			if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
+				//从bd中得到对应类的类型
 				Class<?> targetType = determineTargetType(beanName, mbd);
 				if (targetType != null) {
+					//个别后置处理器的该方法什么事都没做，重要的为处理代理的后置处理器
 					bean = applyBeanPostProcessorsBeforeInstantiation(targetType, beanName);
 					if (bean != null) {
+						//applyBeanPostProcessorsAfterInitialization 处理aop
 						bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
 					}
 				}
@@ -1801,10 +1808,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		Object wrappedBean = bean;
 		if (mbd == null || !mbd.isSynthetic()) {
+			//执行spring当中的内置处理器---xxxPostProcessor---@PostConstruct 生命周期回调和InitMethod 时
 			wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
 		}
 
 		try {
+			//执行 InitializingBean 初始化 实现InitializingBean接口时
 			invokeInitMethods(beanName, wrappedBean, mbd);
 		}
 		catch (Throwable ex) {
@@ -1813,6 +1822,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					beanName, "Invocation of init method failed", ex);
 		}
 		if (mbd == null || !mbd.isSynthetic()) {
+			//对 对象的初始化进行干预(将userService改变成为代理对象 实现aop)
 			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
 		}
 

@@ -30,8 +30,4 @@ rootProject.children.each {project ->
 	project.buildFileName = "${project.name}.gradle"
 }
 include 'evan-test'
-include 'evan-test02'
-include 'evan-test03'
-include 'evan-test04'
-include 'evan-test04'
 

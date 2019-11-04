@@ -1,0 +1,6 @@
+实例化：Object o=new Object(); 创建对象
+初始化：o=null; 设置属性
+1.BeanFactoryPostProcessor 只能干预bean工厂的初始化过程，并不能干预bean工厂的实例化过程。
+  BeanPostProcessor 能干预bean的 实例化过程 + 初始化的过程。
+
+2.
