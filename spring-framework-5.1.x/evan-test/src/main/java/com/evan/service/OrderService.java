@@ -1,5 +1,6 @@
 package com.evan.service;
 
+import com.evan.proxy.CglibUtil;
 import org.aspectj.lang.annotation.After;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -14,14 +15,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderService {
 
-	@Autowired
-	UserService userService;
+//	public OrderService() {
+//		System.out.println("start order default");
+//	}
 
-	public void testAop(){
-		System.out.println("-----order----logic code------");
+	public OrderService(UserService userService){
+		System.out.println("start order 1个参数");
 	}
 
-	public OrderService() {
-		System.out.println("start order");
+	public OrderService(UserService userService,CglibUtil cglibUtil) {
+		System.out.println("start order 2个参数");
 	}
+
+	//类型转换测试
+	/*public OrderService(Class userService){
+		System.out.println("111111111"+userService.getSimpleName());
+	}*/
+
 }

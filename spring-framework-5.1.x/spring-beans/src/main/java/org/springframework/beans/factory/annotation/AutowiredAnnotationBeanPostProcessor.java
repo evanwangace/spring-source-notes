@@ -270,6 +270,8 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		}
 
 		// Quick check on the concurrent map first, with minimal locking.
+		//candidateConstructorsCache 是已经被推断完成的类和该类被推断出来的构造方法集合 的 map
+		//待测试：
 		Constructor<?>[] candidateConstructors = this.candidateConstructorsCache.get(beanClass);
 		if (candidateConstructors == null) {
 			// Fully synchronized resolution now...
@@ -278,6 +280,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 				if (candidateConstructors == null) {
 					Constructor<?>[] rawCandidates;
 					try {
+						//拿到所有构造方法
 						rawCandidates = beanClass.getDeclaredConstructors();
 					}
 					catch (Throwable ex) {
@@ -285,23 +288,31 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 								"Resolution of declared constructors on bean Class [" + beanClass.getName() +
 								"] from ClassLoader [" + beanClass.getClassLoader() + "] failed", ex);
 					}
+					//存候选即合格的构造方法
 					List<Constructor<?>> candidates = new ArrayList<>(rawCandidates.length);
+					//必须要的构造方法
 					Constructor<?> requiredConstructor = null;
+					//默认的构造方法
 					Constructor<?> defaultConstructor = null;
+					//把推断主要的构造方法委托给Kotlin
 					Constructor<?> primaryConstructor = BeanUtils.findPrimaryConstructor(beanClass);
 					int nonSyntheticConstructors = 0;
 					for (Constructor<?> candidate : rawCandidates) {
+						//判断构造方法是不是合成的构造方法
 						if (!candidate.isSynthetic()) {
 							nonSyntheticConstructors++;
 						}
 						else if (primaryConstructor != null) {
 							continue;
 						}
+						//拿出构造方法上的注解的require属性对象
 						AnnotationAttributes ann = findAutowiredAnnotation(candidate);
 						if (ann == null) {
 							Class<?> userClass = ClassUtils.getUserClass(beanClass);
+							//判断内部类
 							if (userClass != beanClass) {
 								try {
+									//通过参数类型得到特定构造方法
 									Constructor<?> superCtor =
 											userClass.getDeclaredConstructor(candidate.getParameterTypes());
 									ann = findAutowiredAnnotation(superCtor);
@@ -326,8 +337,10 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 											". Found constructor with 'required' Autowired annotation: " +
 											candidate);
 								}
+								//当前构造方法 放入
 								requiredConstructor = candidate;
 							}
+							//放入合格的集合
 							candidates.add(candidate);
 						}
 						else if (candidate.getParameterCount() == 0) {
@@ -491,6 +504,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 	@Nullable
 	private AnnotationAttributes findAutowiredAnnotation(AccessibleObject ao) {
 		if (ao.getAnnotations().length > 0) {  // autowiring annotations have to be local
+			//this.autowiredAnnotationTypes 存在值 @Value @Autowired
 			for (Class<? extends Annotation> type : this.autowiredAnnotationTypes) {
 				AnnotationAttributes attributes = AnnotatedElementUtils.getMergedAnnotationAttributes(ao, type);
 				if (attributes != null) {

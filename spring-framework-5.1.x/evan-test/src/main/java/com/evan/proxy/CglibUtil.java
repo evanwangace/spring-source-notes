@@ -4,6 +4,7 @@ import com.evan.service.UserService;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
 import org.springframework.cglib.proxy.MethodProxy;
+import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 
@@ -14,6 +15,7 @@ import java.lang.reflect.Method;
  * @Version 1.0.0
  * @Date 2019/11/1 14:38
  */
+@Component
 public class CglibUtil {
 	public static Object getProxy() {
 		Enhancer enhancer = new Enhancer();

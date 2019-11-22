@@ -46,6 +46,7 @@ import org.springframework.util.Assert;
  * @since 3.0
  * @see AnnotationConfigApplicationContext#register
  */
+//可以替代ClassPathBeanDefinitionScanner 解析bd的功能。 就是把类解析编程对应的bd。
 public class AnnotatedBeanDefinitionReader {
 
 	private final BeanDefinitionRegistry registry;

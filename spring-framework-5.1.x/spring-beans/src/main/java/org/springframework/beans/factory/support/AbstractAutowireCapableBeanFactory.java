@@ -505,7 +505,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		try {
 			// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
-			//第一次调用后置处理器---aop （实例化之前，此时的对象还没有new出来）
+			//第一次调用后置处理器---aop （实例化之前，此时的对象还没有new出来 作用：判断将要被实例化的bean，是否需要做代理）
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			//一般情况下为空
 			if (bean != null) {
@@ -557,7 +557,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		BeanWrapper instanceWrapper = null;
 		//判断bd是否是单例
 		if (mbd.isSingleton()) {
-			//为什么要remove 待研究
+			//判断你这个对象是否创建过 remove会返回这个对象
 			instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);
 		}
 		if (instanceWrapper == null) {
@@ -566,7 +566,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			//将对象实例化后，返回该对象的包装对象
 			instanceWrapper = createBeanInstance(beanName, mbd, args);
 		}
-		//通过api将先前放入的对象，拿出来
+		//通过api将先前放入的对象，拿出来，得到实例化出来的对象
 		final Object bean = instanceWrapper.getWrappedInstance();
 		Class<?> beanType = instanceWrapper.getWrappedClass();
 		if (beanType != NullBean.class) {
@@ -575,9 +575,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Allow post-processors to modify the merged bean definition.
 		synchronized (mbd.postProcessingLock) {
+			//表示后置处理器开始执行
 			if (!mbd.postProcessed) {
 				try {
 					//第三次调用后置处理器 进行合并，需要了解RootBeanDefinition
+					//通过后置处理器来应用合并之后的bd--目标
+					//缓存了注入元素的信息(spring自己做的)-----更多事情--->让程序员来做
+					//应用bd?-------把bd里面的信息拿出来---需要的属性
+					//为了得到完整信息的bd 所以需要合并。bd的继承不是真的继承，setParentName()只是个表示信息。
 					applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
 				}
 				catch (Throwable ex) {
@@ -1178,21 +1183,30 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 					"Bean class isn't public, and non-public access not allowed: " + beanClass.getName());
 		}
-
+		//函数式编程，也类似提供了个工厂 这些方法执行成功后，就不会再去推断构造方法
 		Supplier<?> instanceSupplier = mbd.getInstanceSupplier();
 		if (instanceSupplier != null) {
 			return obtainFromSupplier(instanceSupplier, beanName);
 		}
 
+		//@Bean 存了一个工厂方法 用来产生对象
 		if (mbd.getFactoryMethodName() != null) {
+			//推断构造方法的目的：是为了让spring自己去调用指定的构造方法去实例化对象。
+			//有了工厂方法以后，我们可以调用工厂方法去产生一个对象。而不需要去推断构造方法产生对象。
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
 		}
 
 		// Shortcut when re-creating the same bean...
+		//重点：简化 prototype(原型 即多例) 对象的创建 每次都创建bean。
+		//表示创建对象的构造方法没有被解析过
+		//解析这个对象如何创建 通过反射 要先确定哪个构造方法
 		boolean resolved = false;
 		boolean autowireNecessary = false;
+		//args一般为空 doGetBean时候 args=null。
 		if (args == null) {
+			//处理多线程状态下 创建bean
 			synchronized (mbd.constructorArgumentLock) {
+				//表示已经找到了创建对象的方式,创建原型的Bean第一次以后 会进入这个判断
 				if (mbd.resolvedConstructorOrFactoryMethod != null) {
 					resolved = true;
 					autowireNecessary = mbd.constructorArgumentsResolved;
@@ -1208,12 +1222,28 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
+		/**
+		 * 笔记：determineConstructorsFromBeanPostProcessors() 用 determine方法代替
+		 * 当我们定义好一个类之后，加上@component表示要把这个类交给spring,让spring替我们去创建对象。
+		 * 在我们在这个类中，会提供1个甚至多个构造方法。
+		 * 一、在手动装配的前提下
+		 * 1.情况一：如果只提供1个的无参构造方法或不显示的写出来(默认的无参构造)，
+		 * 那么 通过determine方法推断ctors=null.原因是如果只有一个构造方法的话，没必要推断。下面做的逻辑就是如果ctors=null 调用无参构造方法。
+		 *2.情况二：如果只提供一个非默认的无参构造方法
+		 * 那么 通过determine方法推断ctors=1 这样的情况下 能确定是只有这一个有参构造，不等null就不会走默认逻辑，然后使用当前这个有参构造.
+		 *3.情况三：有多个构造方法，包括多个有参构造和1个无参构造。
+		 * 那么 通过determine方法推断ctors=null 迷茫，推断出来合适的构造方法还是null. 最后还是回走调用默认无参构造方法的逻辑
+		 *4.情况构造方法 多个@Autowired ==true 异常
+		 * 5.多个构造方法----写了多个
+		 */
 		// Candidate constructors for autowiring?
 		//第二次调用后置处理器，推断构造方法
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+		//手动装配的推断 1.==null. 2.==1 使用默认或者唯一的  3.当有kotlin时候可能有多个
+		//进入判断 (确定构造方法参数值) 自动装配的推断  第二次确定要使用的构造方法
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
-			//找到合理的构造方法
+			//通过构造方法注入一个对象然后完成实例化对象
 			return autowireConstructor(beanName, mbd, ctors, args);
 		}
 
@@ -1225,6 +1255,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// No special handling: simply use no-arg constructor.
 		//如果没有特殊的构造方法，默认调用无参的构造方法，把bean实例化出来
+		//通过无参构造方法实例化对象
 		return instantiateBean(beanName, mbd);
 	}
 
@@ -1297,6 +1328,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
 					SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
+					//调用AutowiredBeanAnnotationPostProcessor 后置处理器的determineCandidateConstructors方法时时推断构造方法
 					Constructor<?>[] ctors = ibp.determineCandidateConstructors(beanClass, beanName);
 					if (ctors != null) {
 						return ctors;
@@ -1813,7 +1845,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		try {
-			//执行 InitializingBean 初始化 实现InitializingBean接口时
+			//执行 InitializingBean 初始化 实现InitializingBean接口时(生命周期回调方法的一种)
 			invokeInitMethods(beanName, wrappedBean, mbd);
 		}
 		catch (Throwable ex) {

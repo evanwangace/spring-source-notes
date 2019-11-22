@@ -247,7 +247,6 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		Object sharedInstance = getSingleton(beanName);
 		//如果sharedInstance不等于Null 即存在 实际会直接返回bean
  		if (sharedInstance != null && args == null) {
-
 			if (logger.isTraceEnabled()) {
 				if (isSingletonCurrentlyInCreation(beanName)) {
 					logger.trace("Returning eagerly cached instance of singleton bean '" + beanName +
@@ -1222,7 +1221,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 */
 	protected RootBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException {
 		// Quick check on the concurrent map first, with minimal locking.
-		//为什么一定要用Root BeanDefinition?
+		//之前已经合并过了
 		RootBeanDefinition mbd = this.mergedBeanDefinitions.get(beanName);
 		if (mbd != null) {
 			return mbd;
@@ -1282,6 +1281,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					try {
 						String parentBeanName = transformedBeanName(bd.getParentName());
 						if (!beanName.equals(parentBeanName)) {
+							//得到父bd
 							pbd = getMergedBeanDefinition(parentBeanName);
 						}
 						else {
@@ -1301,7 +1301,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 								"Could not resolve parent bean definition '" + bd.getParentName() + "'", ex);
 					}
 					// Deep copy with overridden values.
+					//将子bd属性赋值给父bd
 					mbd = new RootBeanDefinition(pbd);
+					//合并属性 子覆盖父
 					mbd.overrideFrom(bd);
 				}
 
@@ -1321,6 +1323,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				// Cache the merged bean definition for the time being
 				// (it might still get re-merged later on in order to pick up metadata changes)
 				if (containingBd == null && isCacheBeanMetadata()) {
+					//合并之后 放入到这个Map当中
 					this.mergedBeanDefinitions.put(beanName, mbd);
 				}
 			}

@@ -196,6 +196,7 @@ public abstract class BeanUtils {
 	 * @see <a href="https://kotlinlang.org/docs/reference/classes.html#constructors">Kotlin docs</a>
 	 */
 	@SuppressWarnings("unchecked")
+	//推断kotlin的类，如果不是 返回空
 	@Nullable
 	public static <T> Constructor<T> findPrimaryConstructor(Class<T> clazz) {
 		Assert.notNull(clazz, "Class must not be null");

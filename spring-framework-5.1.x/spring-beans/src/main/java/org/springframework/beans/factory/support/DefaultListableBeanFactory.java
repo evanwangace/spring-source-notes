@@ -504,6 +504,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			// is not defined as alias for some other bean.
 			if (!isAlias(beanName)) {
 				try {
+					//合并bd
 					RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 					// Only check bean definition if it is complete.
 					if (!mbd.isAbstract() && (allowEagerInit ||
@@ -823,7 +824,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		// Trigger initialization of all non-lazy singleton beans...
 		//遍历所有的beanDefinition根据名字、继而验证beanDefinition
 		for (String beanName : beanNames) {
+			//在这里合并---合情合理 先合并后apply
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
+			//验证bd
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
 				//判断是不是factoryBean
 				if (isFactoryBean(beanName)) {
@@ -1214,12 +1217,13 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 							converter.convertIfNecessary(value, type, descriptor.getMethodParameter()));
 				}
 			}
-
+			//判断解决多个类型注入 例如List<TestInterface> test;
 			Object multipleBeans = resolveMultipleBeans(descriptor, beanName, autowiredBeanNames, typeConverter);
 			if (multipleBeans != null) {
 				return multipleBeans;
 			}
 
+			//找到需要注入的对象
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
 			if (matchingBeans.isEmpty()) {
 				if (isRequired(descriptor)) {
@@ -1257,6 +1261,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				autowiredBeanNames.add(autowiredBeanName);
 			}
 			if (instanceCandidate instanceof Class) {
+				//真正的拿到需要转换并注入的对象，去调用getBean
 				instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
 			}
 			Object result = instanceCandidate;

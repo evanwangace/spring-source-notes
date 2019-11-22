@@ -269,6 +269,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 				this.targetSourcedBeans.add(beanName);
 			}
 			Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(beanClass, beanName, targetSource);
+			//就是这里
 			Object proxy = createProxy(beanClass, beanName, specificInterceptors, targetSource);
 			this.proxyTypes.put(cacheKey, proxy.getClass());
 			return proxy;
@@ -362,6 +363,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		// Create proxy if we have advice.
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
+			//进行代理，先把需要代理的bean放入到advisedBeans
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
 			Object proxy = createProxy(
 					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
@@ -464,8 +466,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (this.beanFactory instanceof ConfigurableListableBeanFactory) {
 			AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
 		}
-
+		//创建代理对象的工厂
 		ProxyFactory proxyFactory = new ProxyFactory();
+		//copy代理相关的属性
 		proxyFactory.copyFrom(this);
 
 		if (!proxyFactory.isProxyTargetClass()) {
@@ -476,7 +479,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 				evaluateProxyInterfaces(beanClass, proxyFactory);
 			}
 		}
-
+		//处理通知
 		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
 		proxyFactory.addAdvisors(advisors);
 		proxyFactory.setTargetSource(targetSource);

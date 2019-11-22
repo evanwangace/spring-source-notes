@@ -162,9 +162,9 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	@Nullable
 	private Supplier<?> instanceSupplier;
-
+	//允许访问非公开方法、构造方法->反射
 	private boolean nonPublicAccessAllowed = true;
-
+	//是否采用宽松模式匹配构造方法
 	private boolean lenientConstructorResolution = true;
 
 	@Nullable
@@ -317,6 +317,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 				getConstructorArgumentValues().addArgumentValues(other.getConstructorArgumentValues());
 			}
 			if (otherAbd.hasPropertyValues()) {
+				//覆盖属性值
 				getPropertyValues().addPropertyValues(other.getPropertyValues());
 			}
 			if (otherAbd.hasMethodOverrides()) {

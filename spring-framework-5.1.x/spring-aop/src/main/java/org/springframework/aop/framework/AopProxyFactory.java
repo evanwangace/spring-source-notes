@@ -50,6 +50,7 @@ public interface AopProxyFactory {
 	 * @return the corresponding AOP proxy
 	 * @throws AopConfigException if the configuration is invalid
 	 */
+	//创建aop代理，返回创建代理的某种技术实现
 	AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException;
 
 }
