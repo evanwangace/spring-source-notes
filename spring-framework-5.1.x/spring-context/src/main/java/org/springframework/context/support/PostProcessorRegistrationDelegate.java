@@ -84,6 +84,9 @@ final class PostProcessorRegistrationDelegate {
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
 			//根据类型从bdmap中找到名字
 			//为什么只有1个，这个是哪里来的，有什么用
+			//合并bd 返回bdrp名字的集合
+			//不能拿原始的bd去比较 必须拿合并后的。在下面这行代码遍历比较类型的时候，就已经提前put到了那个mergedBeanDefinitions这个map中了。
+			//目标：你要拿到bd里面的class，看看是否是BeanDefinitionRegistryPostProcessor类型。如果是将name放到postProcessorNames.
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
@@ -104,6 +107,7 @@ final class PostProcessorRegistrationDelegate {
 			currentRegistryProcessors.clear();
 
 			// Next, invoke the BeanDefinitionRegistryPostProcessors that implement Ordered.
+			//找到另一种策略的bdrp
 			postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
 				if (!processedBeans.contains(ppName) && beanFactory.isTypeMatch(ppName, Ordered.class)) {

@@ -15,9 +15,6 @@ import javax.annotation.PostConstruct;
 @Component
 public class UserService {
 
-	@Autowired
-	OrderService orderService;
-
 	//方便验证时机，生命周期回调，先于AOP
 	@PostConstruct
 	public void init(){

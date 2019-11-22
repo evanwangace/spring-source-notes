@@ -351,8 +351,10 @@ public class ConstructorArgumentValues {
 	@Nullable
 	public ValueHolder getArgumentValue(int index, @Nullable Class<?> requiredType, @Nullable String requiredName, @Nullable Set<ValueHolder> usedValueHolders) {
 		Assert.isTrue(index >= 0, "Index must not be negative");
+		//首先根据下标去拿
 		ValueHolder valueHolder = getIndexedArgumentValue(index, requiredType, requiredName);
 		if (valueHolder == null) {
+			//然后从无序中拿
 			valueHolder = getGenericArgumentValue(requiredType, requiredName, usedValueHolders);
 		}
 		return valueHolder;
@@ -433,6 +435,7 @@ public class ConstructorArgumentValues {
 	 * Holder for a constructor argument value, with an optional type
 	 * attribute indicating the target type of the actual constructor argument.
 	 */
+	//对最终要使用的构造方法的参数值(对象)进行包装
 	public static class ValueHolder implements BeanMetadataElement {
 
 		@Nullable
