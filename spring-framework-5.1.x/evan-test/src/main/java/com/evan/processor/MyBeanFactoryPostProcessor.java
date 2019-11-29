@@ -38,6 +38,5 @@ public class MyBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
 		 * 这种情况下也让自己提供构造方法参数值 失去了意义
 		 */
 		//orderService.setInstanceSupplier(()->new OrderService(beanFactory.getBean(UserService.class)));
-
 	}
 }

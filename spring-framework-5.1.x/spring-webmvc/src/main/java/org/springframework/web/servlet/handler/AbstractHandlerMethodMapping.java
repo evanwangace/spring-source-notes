@@ -195,8 +195,10 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	 * Detects handler methods at initialization.
 	 * @see #initHandlerMethods
 	 */
+	//生命周期回调 实现InitializingBean接口
 	@Override
 	public void afterPropertiesSet() {
+		//实际上在spring容器加载完AbstractHandlerMapping这个bean之后，就通过生命周期回调来初始化了lookup的map。
 		initHandlerMethods();
 	}
 
@@ -207,6 +209,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	 * @see #handlerMethodsInitialized
 	 */
 	protected void initHandlerMethods() {
+		//还是会去判断父子容器...em...差点被摆了一道
 		for (String beanName : getCandidateBeanNames()) {
 			if (!beanName.startsWith(SCOPED_TARGET_NAME_PREFIX)) {
 				processCandidateBean(beanName);
@@ -241,6 +244,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	protected void processCandidateBean(String beanName) {
 		Class<?> beanType = null;
 		try {
+			//拿到class类型。全限定名 注：这里的扫描实际上是通过spring来进行的。webmvc中包含的spring-context依赖。
 			beanType = obtainApplicationContext().getType(beanName);
 		}
 		catch (Throwable ex) {
@@ -249,7 +253,9 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 				logger.trace("Could not resolve type for bean '" + beanName + "'", ex);
 			}
 		}
+		//isHandler判断有没有@controller和@RequestMapping注解
 		if (beanType != null && isHandler(beanType)) {
+			//遍历所有方法对象
 			detectHandlerMethods(beanName);
 		}
 	}
@@ -265,9 +271,11 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 
 		if (handlerType != null) {
 			Class<?> userType = ClassUtils.getUserClass(handlerType);
+			//各种判断 合成方法 有没有加@RequestMapping注解 等等...
 			Map<Method, T> methods = MethodIntrospector.selectMethods(userType,
 					(MethodIntrospector.MetadataLookup<T>) method -> {
 						try {
+							//根据Method对象信息和@RequestMapping注解生成一个RequestMappingInfo对象
 							return getMappingForMethod(method, userType);
 						}
 						catch (Throwable ex) {
@@ -280,6 +288,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 			}
 			methods.forEach((method, mapping) -> {
 				Method invocableMethod = AopUtils.selectInvocableMethod(method, userType);
+				//把对应的handler(controller类)和其里面的方法对和mapping(uri)放入指定的map
 				registerHandlerMethod(handler, invocableMethod, mapping);
 			});
 		}
@@ -360,6 +369,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	 */
 	@Override
 	protected HandlerMethod getHandlerInternal(HttpServletRequest request) throws Exception {
+		//拿到请求的uri
 		String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
 		this.mappingRegistry.acquireReadLock();
 		try {
@@ -383,6 +393,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 	@Nullable
 	protected HandlerMethod lookupHandlerMethod(String lookupPath, HttpServletRequest request) throws Exception {
 		List<Match> matches = new ArrayList<>();
+		//根据uri查找，拿到对应的具体的method
 		List<T> directPathMatches = this.mappingRegistry.getMappingsByUrl(lookupPath);
 		if (directPathMatches != null) {
 			addMatchingMappings(directPathMatches, matches, request);
@@ -526,6 +537,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 
 		private final Map<T, HandlerMethod> mappingLookup = new LinkedHashMap<>();
 
+		//用来存储request的uri和对应的request的信息 例如方法对象、方法参数、匹配规则等
 		private final MultiValueMap<String, T> urlLookup = new LinkedMultiValueMap<>();
 
 		private final Map<String, List<HandlerMethod>> nameLookup = new ConcurrentHashMap<>();
@@ -548,6 +560,8 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 		 */
 		@Nullable
 		public List<T> getMappingsByUrl(String urlPath) {
+			//在哪里初始化的这个map? 以及map中的value是按什么规则放入的?
+			//在200行代码的afterPropertiesSet()方法中初始化。
 			return this.urlLookup.get(urlPath);
 		}
 
@@ -589,6 +603,7 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 
 				List<String> directUrls = getDirectUrls(mapping);
 				for (String url : directUrls) {
+					//真正的进行加入到map中的操作。
 					this.urlLookup.add(url, mapping);
 				}
 

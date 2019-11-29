@@ -615,6 +615,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		String beanName = transformedBeanName(name);
 
 		// Check manually registered singletons.
+		//判断有没有被创建
 		Object beanInstance = getSingleton(beanName, false);
 		if (beanInstance != null && beanInstance.getClass() != NullBean.class) {
 			if (beanInstance instanceof FactoryBean && !BeanFactoryUtils.isFactoryDereference(name)) {
@@ -631,7 +632,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			// No bean definition found in this factory -> delegate to parent.
 			return parentBeanFactory.getType(originalBeanName(name));
 		}
-
+		//拿到合并的bd
 		RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 
 		// Check decorated bean definition, if any: We assume it'll be easier

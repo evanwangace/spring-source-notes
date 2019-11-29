@@ -864,7 +864,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 			}
 			invocableMethod.setDataBinderFactory(binderFactory);
 			invocableMethod.setParameterNameDiscoverer(this.parameterNameDiscoverer);
-
+			//在这里new了一个ModelAndView容器
 			ModelAndViewContainer mavContainer = new ModelAndViewContainer();
 			mavContainer.addAllAttributes(RequestContextUtils.getInputFlashMap(request));
 			modelFactory.initModel(webRequest, mavContainer, invocableMethod);
@@ -889,12 +889,12 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 				});
 				invocableMethod = invocableMethod.wrapConcurrentResult(result);
 			}
-
+			//真正的开始执行controller，并把mavContainer容器传进去
 			invocableMethod.invokeAndHandle(webRequest, mavContainer);
 			if (asyncManager.isConcurrentHandlingStarted()) {
 				return null;
 			}
-
+			//最后得到一个ModelAndView对象
 			return getModelAndView(mavContainer, modelFactory, webRequest);
 		}
 		finally {

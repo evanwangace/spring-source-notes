@@ -43,6 +43,7 @@ public interface RequestCondition<T> {
 	 * @return a request condition instance that is the result of combining
 	 * the two condition instances.
 	 */
+	//组合多个请求条件
 	T combine(T other);
 
 	/**
@@ -57,6 +58,7 @@ public interface RequestCondition<T> {
 	 * empty content thus not causing a failure to match.
 	 * @return a condition instance in case of a match or {@code null} otherwise.
 	 */
+	//真正的匹配请求
 	@Nullable
 	T getMatchingCondition(HttpServletRequest request);
 

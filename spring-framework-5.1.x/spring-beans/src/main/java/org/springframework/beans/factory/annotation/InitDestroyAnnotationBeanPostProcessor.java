@@ -128,9 +128,10 @@ public class InitDestroyAnnotationBeanPostProcessor
 		LifecycleMetadata metadata = findLifecycleMetadata(beanType);
 		metadata.checkConfigMembers(beanDefinition);
 	}
-
+	//处理 注解方式标注的 生命周期后调方法
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		//从这里进入
 		LifecycleMetadata metadata = findLifecycleMetadata(bean.getClass());
 		try {
 			metadata.invokeInitMethods(bean, beanName);

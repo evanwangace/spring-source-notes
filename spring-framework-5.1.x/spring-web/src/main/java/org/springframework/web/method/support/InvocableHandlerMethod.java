@@ -130,7 +130,7 @@ public class InvocableHandlerMethod extends HandlerMethod {
 	@Nullable
 	public Object invokeForRequest(NativeWebRequest request, @Nullable ModelAndViewContainer mavContainer,
 			Object... providedArgs) throws Exception {
-
+		//拿到方法参数
 		Object[] args = getMethodArgumentValues(request, mavContainer, providedArgs);
 		if (logger.isTraceEnabled()) {
 			logger.trace("Arguments: " + Arrays.toString(args));
@@ -146,14 +146,14 @@ public class InvocableHandlerMethod extends HandlerMethod {
 	 */
 	protected Object[] getMethodArgumentValues(NativeWebRequest request, @Nullable ModelAndViewContainer mavContainer,
 			Object... providedArgs) throws Exception {
-
+		//拿到方法的形参数组
 		MethodParameter[] parameters = getMethodParameters();
 		if (ObjectUtils.isEmpty(parameters)) {
 			return EMPTY_ARGS;
 		}
-
 		Object[] args = new Object[parameters.length];
 		for (int i = 0; i < parameters.length; i++) {
+			//遍历形参数组并进行封装
 			MethodParameter parameter = parameters[i];
 			parameter.initParameterNameDiscovery(this.parameterNameDiscoverer);
 			args[i] = findProvidedArgument(parameter, providedArgs);
@@ -164,6 +164,7 @@ public class InvocableHandlerMethod extends HandlerMethod {
 				throw new IllegalStateException(formatArgumentError(parameter, "No suitable resolver"));
 			}
 			try {
+				//找一个argumentResolvers来处理参数赋值
 				args[i] = this.resolvers.resolveArgument(parameter, mavContainer, request, this.dataBinderFactory);
 			}
 			catch (Exception ex) {
@@ -187,6 +188,7 @@ public class InvocableHandlerMethod extends HandlerMethod {
 	protected Object doInvoke(Object... args) throws Exception {
 		ReflectionUtils.makeAccessible(getBridgedMethod());
 		try {
+			//走到调用指定controller的方法,这里直接从spring容器内getBean。
 			return getBridgedMethod().invoke(getBean(), args);
 		}
 		catch (IllegalArgumentException ex) {
