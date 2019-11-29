@@ -499,6 +499,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * Initialize the strategy objects that this servlet uses.
 	 * <p>May be overridden in subclasses in order to initialize further strategy objects.
 	 */
+	//加载各种组件 包括HandlerMapping
 	protected void initStrategies(ApplicationContext context) {
 		initMultipartResolver(context);
 		initLocaleResolver(context);
@@ -595,6 +596,8 @@ public class DispatcherServlet extends FrameworkServlet {
 
 		if (this.detectAllHandlerMappings) {
 			// Find all HandlerMappings in the ApplicationContext, including ancestor contexts.
+			//各种组件配置在DispatcherServlet.properties文件中
+			//扩展handlerMapping 自己写一个类，实现HandlerMapping 然后加入到spring容器
 			Map<String, HandlerMapping> matchingBeans =
 					BeanFactoryUtils.beansOfTypeIncludingAncestors(context, HandlerMapping.class, true, false);
 			if (!matchingBeans.isEmpty()) {
@@ -1009,11 +1012,14 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+				//检查请求有没有附带文件：判断contextType的内容
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
 				// Determine handler for the current request.
+				//核心方法 找controller
 				mappedHandler = getHandler(processedRequest);
+				//找到了之后先判断是否为空
 				if (mappedHandler == null) {
 					noHandlerFound(processedRequest, response);
 					return;
@@ -1032,11 +1038,13 @@ public class DispatcherServlet extends FrameworkServlet {
 					}
 				}
 
+				//调用拦截器
 				if (!mappedHandler.applyPreHandle(processedRequest, response)) {
 					return;
 				}
 
 				// Actually invoke the handler.
+				//执行controller入口，执行指定controller的对应方法，然后返回一个ModelAndView
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
 				if (asyncManager.isConcurrentHandlingStarted()) {
@@ -1228,8 +1236,12 @@ public class DispatcherServlet extends FrameworkServlet {
 	 */
 	@Nullable
 	protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+		//默认有两个handlerMapping，handlerMapping用来获取controller
+		//为什么有多个handlerMapping? 扩展点:因为注册handlerMapping有多种方式。
+		//1.@Controller注解 2.手动实现Controller接口 3.实现HttpRequestHandler接口
 		if (this.handlerMappings != null) {
 			for (HandlerMapping mapping : this.handlerMappings) {
+				//将RequestMappingInfo封装成HandlerExecutionChain 把requestMapping拦截器与controller绑定起来
 				HandlerExecutionChain handler = mapping.getHandler(request);
 				if (handler != null) {
 					return handler;
@@ -1264,6 +1276,11 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * @throws ServletException if no HandlerAdapter can be found for the handler. This is a fatal error.
 	 */
 	protected HandlerAdapter getHandlerAdapter(Object handler) throws ServletException {
+		//默认有三个处理器适配器 对应三种不同的注册controller的方式(获取handlerMapping)=>对应着三种不同的执行方式。
+		//1.反射的方式执行方法 (@Controller注解注册方式)
+		//2.把查出来的handler强转为Controller接口类型，调用它的handleRequest方法。(实现Controller接口注册方式)
+		//3.把查出来的handler强转为HttpRequestHandler接口类型，调用它的handleRequest方法((实现HttpRequestHandler接口注册方式))
+		//两种类型：1.注解类型 2.beanName类型
 		if (this.handlerAdapters != null) {
 			for (HandlerAdapter adapter : this.handlerAdapters) {
 				if (adapter.supports(handler)) {

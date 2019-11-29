@@ -173,7 +173,7 @@ public final class CachedIntrospectionResults {
 		if (results != null) {
 			return results;
 		}
-
+		//achedIntrospectionResults包含所有类中的信息
 		results = new CachedIntrospectionResults(beanClass);
 		ConcurrentMap<Class<?>, CachedIntrospectionResults> classCacheToUse;
 
@@ -270,6 +270,7 @@ public final class CachedIntrospectionResults {
 			if (logger.isTraceEnabled()) {
 				logger.trace("Getting BeanInfo for class [" + beanClass.getName() + "]");
 			}
+			//返回bean属性的描述器 即get/set
 			this.beanInfo = getBeanInfo(beanClass);
 
 			if (logger.isTraceEnabled()) {
