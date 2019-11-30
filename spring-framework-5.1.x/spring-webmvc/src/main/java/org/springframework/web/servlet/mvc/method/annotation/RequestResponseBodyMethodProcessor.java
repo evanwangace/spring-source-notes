@@ -110,7 +110,7 @@ public class RequestResponseBodyMethodProcessor extends AbstractMessageConverter
 	public boolean supportsParameter(MethodParameter parameter) {
 		return parameter.hasParameterAnnotation(RequestBody.class);
 	}
-
+	//判断是否存在@ResponseBody注解
 	@Override
 	public boolean supportsReturnType(MethodParameter returnType) {
 		return (AnnotatedElementUtils.hasAnnotation(returnType.getContainingClass(), ResponseBody.class) ||
@@ -167,13 +167,14 @@ public class RequestResponseBodyMethodProcessor extends AbstractMessageConverter
 		RequestBody requestBody = parameter.getParameterAnnotation(RequestBody.class);
 		return (requestBody != null && requestBody.required() && !parameter.isOptional());
 	}
-
+	//由专门处理@ResponseBody注解的handler调用
 	@Override
 	public void handleReturnValue(@Nullable Object returnValue, MethodParameter returnType,
 			ModelAndViewContainer mavContainer, NativeWebRequest webRequest)
 			throws IOException, HttpMediaTypeNotAcceptableException, HttpMessageNotWritableException {
-
+		//将容器对象的requestHandled设置为true=>表示不需要视图跳转和渲染
 		mavContainer.setRequestHandled(true);
+		//输入和输出
 		ServletServerHttpRequest inputMessage = createInputMessage(webRequest);
 		ServletServerHttpResponse outputMessage = createOutputMessage(webRequest);
 

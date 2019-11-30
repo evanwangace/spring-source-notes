@@ -74,7 +74,7 @@ public class HandlerMethodReturnValueHandlerComposite implements HandlerMethodRe
 	@Override
 	public void handleReturnValue(@Nullable Object returnValue, MethodParameter returnType,
 			ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
-
+		//selectHandler  仍然类似适配器 根据当前的返回值和注解判断=>是进行视图跳转 还是 返回数据响应
 		HandlerMethodReturnValueHandler handler = selectHandler(returnValue, returnType);
 		if (handler == null) {
 			throw new IllegalArgumentException("Unknown return value type: " + returnType.getParameterType().getName());
@@ -85,10 +85,14 @@ public class HandlerMethodReturnValueHandlerComposite implements HandlerMethodRe
 	@Nullable
 	private HandlerMethodReturnValueHandler selectHandler(@Nullable Object value, MethodParameter returnType) {
 		boolean isAsyncValue = isAsyncReturnValue(value, returnType);
+		//等同于 我们自己模拟的 判断返回数据还是跳转视图
+		//扩展点：this.returnValueHandlers为对controller方法返回值的 处理器集合，可以通过实现HandlerMethodReturnValueHandler接口
+		//然后在，AppConfig中在实现webMvcConfigurer 或 继承WebMvcConfigurationSupport的addReturnValueHandlers()方法中,add进去。
 		for (HandlerMethodReturnValueHandler handler : this.returnValueHandlers) {
 			if (isAsyncValue && !(handler instanceof AsyncHandlerMethodReturnValueHandler)) {
 				continue;
 			}
+			//通过这里判断，有没有加@ResponseBody注解
 			if (handler.supportsReturnType(returnType)) {
 				return handler;
 			}

@@ -148,6 +148,7 @@ public class InternalResourceView extends AbstractUrlBasedView {
 		String dispatcherPath = prepareForRendering(request, response);
 
 		// Obtain a RequestDispatcher for the target resource (typically a JSP).
+		//拿到Dispatcher 准备转发
 		RequestDispatcher rd = getRequestDispatcher(request, dispatcherPath);
 		if (rd == null) {
 			throw new ServletException("Could not get RequestDispatcher for [" + getUrl() +
@@ -155,6 +156,7 @@ public class InternalResourceView extends AbstractUrlBasedView {
 		}
 
 		// If already included or response already committed, perform include, else forward.
+		//rd.include和rd.forward 都是转发 不同的是forward会帮你关掉流
 		if (useInclude(request, response)) {
 			response.setContentType(getContentType());
 			if (logger.isDebugEnabled()) {

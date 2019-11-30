@@ -240,6 +240,7 @@ public abstract class RequestContextUtils {
 	 * @return a {@link FlashMap} instance, never {@code null} within a
 	 * {@code DispatcherServlet}-handled request
 	 */
+	//重定向后 仍然能传递参数
 	public static FlashMap getOutputFlashMap(HttpServletRequest request) {
 		return (FlashMap) request.getAttribute(DispatcherServlet.OUTPUT_FLASH_MAP_ATTRIBUTE);
 	}

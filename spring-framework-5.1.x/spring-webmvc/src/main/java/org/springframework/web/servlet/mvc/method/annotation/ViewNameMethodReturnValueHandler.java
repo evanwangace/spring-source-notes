@@ -67,7 +67,7 @@ public class ViewNameMethodReturnValueHandler implements HandlerMethodReturnValu
 		return this.redirectPatterns;
 	}
 
-
+	//来处理视图跳转的ViewNameMethodReturnValueHandler
 	@Override
 	public boolean supportsReturnType(MethodParameter returnType) {
 		Class<?> paramType = returnType.getParameterType();
@@ -80,7 +80,9 @@ public class ViewNameMethodReturnValueHandler implements HandlerMethodReturnValu
 
 		if (returnValue instanceof CharSequence) {
 			String viewName = returnValue.toString();
+			//设置视图名称
 			mavContainer.setViewName(viewName);
+			//判断是否是重定向
 			if (isRedirectViewName(viewName)) {
 				mavContainer.setRedirectModelScenario(true);
 			}
@@ -100,6 +102,7 @@ public class ViewNameMethodReturnValueHandler implements HandlerMethodReturnValu
 	 * @return "true" if the given view name is recognized as a redirect view
 	 * reference; "false" otherwise.
 	 */
+	//显式的加前缀redirect:或forward:
 	protected boolean isRedirectViewName(String viewName) {
 		return (PatternMatchUtils.simpleMatch(this.redirectPatterns, viewName) || viewName.startsWith("redirect:"));
 	}

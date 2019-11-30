@@ -99,12 +99,15 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 	 * @param mavContainer the ModelAndViewContainer for this request
 	 * @param providedArgs "given" arguments matched by type (not resolved)
 	 */
+	//ModelAndViewContainer 用来整合视图，判断视图是否需要跳转 整合model
 	public void invokeAndHandle(ServletWebRequest webRequest, ModelAndViewContainer mavContainer,
 			Object... providedArgs) throws Exception {
-		//进入
+		//进入，执行完毕返回 controller的指定方法的返回值
 		Object returnValue = invokeForRequest(webRequest, mavContainer, providedArgs);
+		//处理@ResponseStatus注解
 		setResponseStatus(webRequest);
 
+		//判断视图是否需要跳转 渲染视图 即 是返回数据还是跳转视图
 		if (returnValue == null) {
 			if (isRequestNotModified(webRequest) || getResponseStatus() != null || mavContainer.isRequestHandled()) {
 				disableContentCachingIfNecessary(webRequest);
@@ -112,14 +115,16 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 				return;
 			}
 		}
+		//读取注解的异常信息
 		else if (StringUtils.hasText(getResponseStatusReason())) {
 			mavContainer.setRequestHandled(true);
 			return;
 		}
-
+		//设置成false，requestHandled默认为false，表示需要视图跳转。后面处理@ResponseBody注解时，又给设为true。
 		mavContainer.setRequestHandled(false);
 		Assert.state(this.returnValueHandlers != null, "No return value handlers");
 		try {
+			//视图裁决 判断跳转页面，视图
 			this.returnValueHandlers.handleReturnValue(
 					returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
 		}
@@ -143,10 +148,12 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 		HttpServletResponse response = webRequest.getResponse();
 		if (response != null) {
 			String reason = getResponseStatusReason();
+			//reason 异常信息
 			if (StringUtils.hasText(reason)) {
 				response.sendError(status.value(), reason);
 			}
 			else {
+				//改变相应状态码
 				response.setStatus(status.value());
 			}
 		}

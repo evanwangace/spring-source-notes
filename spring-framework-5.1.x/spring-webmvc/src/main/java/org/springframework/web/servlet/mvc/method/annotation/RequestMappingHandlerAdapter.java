@@ -889,12 +889,12 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 				});
 				invocableMethod = invocableMethod.wrapConcurrentResult(result);
 			}
-			//真正的开始执行controller，并把mavContainer容器传进去
+			//真正的开始执行controller，并把mavContainer容器传进去，实际上controller执行的返回值被放入了mavContainer中
 			invocableMethod.invokeAndHandle(webRequest, mavContainer);
 			if (asyncManager.isConcurrentHandlingStarted()) {
 				return null;
 			}
-			//最后得到一个ModelAndView对象
+			//最后得到一个ModelAndView对象=>为了获取视图名称
 			return getModelAndView(mavContainer, modelFactory, webRequest);
 		}
 		finally {
@@ -998,16 +998,21 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter
 	@Nullable
 	private ModelAndView getModelAndView(ModelAndViewContainer mavContainer,
 			ModelFactory modelFactory, NativeWebRequest webRequest) throws Exception {
-
+		//处理通过model的传值 底层就是调用的request.setAttribute
 		modelFactory.updateModel(webRequest, mavContainer);
+		//这里不需要处理视图跳转的话，由这个属性判断，然后直接返回null。
 		if (mavContainer.isRequestHandled()) {
 			return null;
 		}
 		ModelMap model = mavContainer.getModel();
+		//构造一个ModelAndView对象
 		ModelAndView mav = new ModelAndView(mavContainer.getViewName(), model, mavContainer.getStatus());
+		//判断视图是是否是一个名称
 		if (!mavContainer.isViewReference()) {
+			//如果不是名称，强转成视图对象
 			mav.setView((View) mavContainer.getView());
 		}
+		//RedirectAttributes 处理重定向后仍然能保留传递的参数
 		if (model instanceof RedirectAttributes) {
 			Map<String, ?> flashAttributes = ((RedirectAttributes) model).getFlashAttributes();
 			HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);

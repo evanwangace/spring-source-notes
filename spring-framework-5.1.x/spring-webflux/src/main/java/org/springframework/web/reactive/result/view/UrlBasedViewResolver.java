@@ -233,6 +233,7 @@ public class UrlBasedViewResolver extends ViewResolverSupport
 		}
 
 		AbstractUrlBasedView urlBasedView;
+		//这里处理了重定向Redirect
 		if (viewName.startsWith(REDIRECT_URL_PREFIX)) {
 			String redirectUrl = viewName.substring(REDIRECT_URL_PREFIX.length());
 			urlBasedView = this.redirectViewProvider.apply(redirectUrl);

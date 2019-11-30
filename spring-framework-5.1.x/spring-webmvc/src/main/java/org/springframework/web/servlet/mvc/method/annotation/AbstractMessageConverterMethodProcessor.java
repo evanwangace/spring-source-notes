@@ -179,6 +179,7 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 	 * by the {@code Accept} header on the request cannot be met by the message converters
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
+	//写出内容
 	protected <T> void writeWithMessageConverters(@Nullable T value, MethodParameter returnType,
 			ServletServerHttpRequest inputMessage, ServletServerHttpResponse outputMessage)
 			throws IOException, HttpMediaTypeNotAcceptableException, HttpMessageNotWritableException {
@@ -186,15 +187,18 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 		Object body;
 		Class<?> valueType;
 		Type targetType;
-
+		//判断返回内容是否是String
 		if (value instanceof CharSequence) {
 			body = value.toString();
 			valueType = String.class;
 			targetType = String.class;
 		}
 		else {
+			//返回值
 			body = value;
+			//值的类型
 			valueType = getReturnValueType(body, returnType);
+			//方法应该返回的类型
 			targetType = GenericTypeResolver.resolveType(getGenericType(returnType), returnType.getContainingClass());
 		}
 
@@ -273,6 +277,7 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 
 		if (selectedMediaType != null) {
 			selectedMediaType = selectedMediaType.removeQualityValue();
+			// 扩展点之一 这里拿到配置的消息转换器
 			for (HttpMessageConverter<?> converter : this.messageConverters) {
 				GenericHttpMessageConverter genericConverter = (converter instanceof GenericHttpMessageConverter ?
 						(GenericHttpMessageConverter<?>) converter : null);
@@ -288,6 +293,7 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 								"Writing [" + LogFormatUtils.formatValue(theBody, !traceOn) + "]");
 						addContentDispositionHeader(inputMessage, outputMessage);
 						if (genericConverter != null) {
+							//调用我们的消息转换器把值写出去
 							genericConverter.write(body, targetType, selectedMediaType, outputMessage);
 						}
 						else {
